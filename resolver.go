@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -231,10 +232,25 @@ func (r *Dialer) lookupIPs(ctx context.Context, host string) ([]net.IP, error) {
 //	// Custom usage
 //	conn, err := dialer.DialContext(ctx, "tcp", "api.github.com:443")
 func (r *Dialer) DialContext(ctx context.Context, network, addr string) (net.Conn, error) {
-	// Split addr into host and port (standard net package format)
-	host, portStr, err := net.SplitHostPort(addr)
-	if err != nil {
-		return nil, fmt.Errorf("invalid address %q: %w", addr, err)
+
+	var host, portStr string
+	var err error
+
+	// if any http or https, strip if
+	if strings.HasPrefix(addr, "https://") {
+		addr = strings.TrimPrefix(addr, "https://")
+	}
+
+	if strings.HasPrefix(addr, "http://") {
+		addr = strings.TrimPrefix(addr, "http://")
+	}
+
+	if strings.Count(addr, ":") == 1 {
+		// Split addr into host and port (standard net package format)
+		host, portStr, err = net.SplitHostPort(addr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid address %q: %w", addr, err)
+		}
 	}
 
 	// If host is already an IP address, use it directly without DNS lookup. No point

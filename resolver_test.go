@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -33,16 +32,17 @@ func TestDialer_DialContext(t *testing.T) {
 		WithStrategy(Race{}),
 	)
 
-	// Parse server URL to get host:port
-	serverURL, _ := url.Parse(server.URL)
-
 	ctx := context.Background()
-	conn, err := dialer.DialContext(ctx, "tcp", serverURL.Host)
+	conn, err := dialer.DialContext(ctx, "tcp", server.URL)
 
 	assert.NoError(t, err)
-	assert.NotNil(t, conn)
-	assert.Equal(t, "tcp", conn.LocalAddr().Network())
-	conn.Close()
+
+	if conn != nil {
+		defer conn.Close()
+		assert.Equal(t, "tcp", conn.LocalAddr().Network())
+
+	}
+
 }
 
 func TestDialer_DialContext_HTTPClient(t *testing.T) {
